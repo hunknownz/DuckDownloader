@@ -19,6 +19,14 @@ export interface DownloadRequest {
   readonly keepIntermediates?: boolean;
 }
 
+export interface LocalExportRequest {
+  readonly input: string;
+  readonly output?: string;
+  readonly title?: string;
+  readonly keepIntermediates?: boolean;
+  readonly cleanupSource?: boolean;
+}
+
 export type DocumentInline =
   | { readonly type: "text"; readonly text: string }
   | { readonly type: "break" }

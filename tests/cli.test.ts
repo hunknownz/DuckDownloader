@@ -14,6 +14,19 @@ function setup() {
 }
 
 describe("CLI", () => {
+  it("documents the supported local conversion and cleanup options in command help", async () => {
+    const { service, io } = setup();
+    expect(await runCli(["convert", "--help"], service, io)).toBe(0);
+    const help = io.out.mock.calls.map(([message]) => message).join("");
+    for (const option of [
+      "<file>",
+      "--output",
+      "--title",
+      "--keep-intermediates",
+      "--cleanup-source",
+    ])
+      expect(help).toContain(option);
+  });
   it("reports actual capabilities as JSON", async () => {
     const { service, io } = setup();
     expect(await runCli(["sources", "--json"], service, io)).toBe(0);
@@ -118,6 +131,39 @@ describe("CLI", () => {
     const { service, io } = setup();
     expect(await runCli(["login", "--source", "unknown"], service, io)).toBe(2);
     expect(io.err).toHaveBeenCalled();
+  });
+
+  it("forwards saved-page layout and cleanup options without using a source adapter", async () => {
+    const { service, adapter, io } = setup();
+    const converter = { convert: vi.fn(async () => "/tmp/retypeset.pdf") };
+    expect(
+      await runCli(
+        [
+          "convert",
+          "saved.webarchive",
+          "-o",
+          "result.pdf",
+          "--title",
+          "Reading copy",
+          "--cleanup-source",
+          "--keep-intermediates",
+        ],
+        service,
+        io,
+        converter,
+      ),
+    ).toBe(0);
+    expect(converter.convert).toHaveBeenCalledWith(
+      {
+        input: "saved.webarchive",
+        output: "result.pdf",
+        title: "Reading copy",
+        cleanupSource: true,
+        keepIntermediates: true,
+      },
+      expect.any(Function),
+    );
+    expect(adapter.download).not.toHaveBeenCalled();
   });
 
   it("allows source downloads to retain intermediate content explicitly", async () => {

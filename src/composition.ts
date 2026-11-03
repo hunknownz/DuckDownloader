@@ -1,7 +1,8 @@
 import { ArticleAdapter } from "./adapters/article/index.js";
+import { SavedPageAdapter } from "./adapters/document/local.js";
 import { ScribdAdapter } from "./adapters/scribd/index.js";
 import type { SourceId } from "./domain.js";
-import type { SourceAdapter } from "./ports.js";
+import type { SavedPageConverter, SourceAdapter } from "./ports.js";
 import { DownloadService } from "./service.js";
 
 export function createService(): DownloadService {
@@ -12,4 +13,8 @@ export function createService(): DownloadService {
       ["feishu", new ArticleAdapter("feishu")],
     ]),
   );
+}
+
+export function createSavedPageConverter(): SavedPageConverter {
+  return new SavedPageAdapter();
 }

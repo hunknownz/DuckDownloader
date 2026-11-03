@@ -1,18 +1,82 @@
-import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Camoufox } from "camoufox";
 import { PDFDict, PDFDocument, PDFName } from "pdf-lib";
 import type { Page } from "playwright-core";
+import { build, buildBinary } from "plist";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { ArticleAdapter } from "../src/adapters/article/index.js";
 import type { BrowserSession, PaperRounding } from "../src/adapters/browser.js";
 import { CamoufoxProvider } from "../src/adapters/camoufox.js";
+import { SavedPageAdapter } from "../src/adapters/document/local.js";
 import { printMarionettePdf, reserveMarionettePort } from "../src/adapters/marionette.js";
 import { normalizePrintedPdf, validatePdf, waitForPdf } from "../src/adapters/pdf.js";
 import { evaluateMainWorld } from "../src/adapters/scribd/evaluate.js";
 import { prepareExportDom } from "../src/adapters/scribd/renderer.js";
 import { PRINT_DOCUMENT_SCRIPT } from "../src/adapters/scribd/scripts.js";
+
+it.skipIf(process.env.DUCKDOWNLOADER_BROWSER !== "1").each(["html", "xml", "binary"] as const)(
+  "retypesets an offline %s page into native A4 PDF and cleans intermediate files",
+  async (format) => {
+    const directory = await mkdtemp(join(tmpdir(), "duckdownloader-layout-browser-"));
+    try {
+      const input = join(directory, format === "html" ? "saved.html" : "saved.webarchive"),
+        output = join(directory, "reading.pdf");
+      const image = Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
+        "base64",
+      );
+      await mkdir(join(directory, "assets"));
+      await writeFile(join(directory, "assets", "pixel.png"), image);
+      const html = `<html><head><meta charset="utf-8"><title>排版验证 Reading copy</title></head><body><main style="font-size:80px"><h2>Structured content</h2><p>Native selectable text</p><ol start="3"><li>One<ul><li>Nested</li></ul></li><li>Two</li></ol><table><tr><th>A</th><th>B</th></tr><tr><td>表格文字</td><td>Cell text</td></tr></table>${Array.from({ length: 65 }, (_, i) => `<p>Paragraph ${i + 1}: 可复制的正文，重新排版后保持内容顺序。Native text remains searchable.</p>`).join("")}<h2>Figure</h2><figure><img src="assets/pixel.png"><figcaption>Saved local image</figcaption></figure><p>Last paragraph marker</p></main></body></html>`;
+      const archive = {
+        WebMainResource: {
+          WebResourceURL: "https://example.test/post",
+          WebResourceMIMEType: "text/html",
+          WebResourceData: Buffer.from(html),
+        },
+        WebSubresources: [
+          {
+            WebResourceURL: "https://example.test/assets/pixel.png",
+            WebResourceMIMEType: "image/png",
+            WebResourceData: image,
+          },
+        ],
+      };
+      await writeFile(
+        input,
+        format === "html" ? html : format === "xml" ? build(archive) : buildBinary(archive),
+      );
+      const requests: string[] = [];
+      const provider = new CamoufoxProvider();
+      await new SavedPageAdapter({
+        async open(options) {
+          const session = await provider.open(options);
+          session.context.on("request", (request) => {
+            if (/^https?:/.test(request.url())) requests.push(request.url());
+          });
+          return session;
+        },
+      }).convert({ input, output, cleanupSource: true });
+      expect(requests).toEqual([]);
+      expect((await readdir(directory)).sort()).toEqual(["assets", "reading.pdf"]);
+      const pdf = await PDFDocument.load(await readFile(output));
+      expect(pdf.getPageCount()).toBeGreaterThan(2);
+      expect(pdf.getCreator()).toBe("DuckDownloader");
+      for (const page of pdf.getPages()) {
+        expect(page.getWidth()).toBeCloseTo((210 / 25.4) * 72, 2);
+        expect(page.getHeight()).toBeCloseTo((297 / 25.4) * 72, 2);
+        expect(
+          page.node.Resources()?.lookupMaybe(PDFName.of("Font"), PDFDict)?.keys().length,
+        ).toBeGreaterThan(0);
+      }
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  },
+  120_000,
+);
 
 it.skipIf(process.env.DUCKDOWNLOADER_BROWSER !== "1")(
   "archives a local article fixture and prints multiple A4 pages with native fonts",

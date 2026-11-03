@@ -77,6 +77,19 @@ pnpm dev download "<相同来源链接>" -o document.pdf
 
 字体等待、页面溢出和平台打印行为见 [PDF 导出与验证](PDF_EXPORT.md)。
 
+## 本地网页重新排版
+
+```bash
+pnpm dev convert saved.html -o reading.pdf
+pnpm dev convert saved.webarchive -o reading.pdf --title "阅读版标题"
+pnpm dev convert saved.html -o reading.pdf --cleanup-source
+pnpm dev convert saved.html -o reading.pdf --keep-intermediates
+```
+
+`convert` 只接受本地 `.html`、`.htm`、`.webarchive`，不接收网址，不需要登录 profile。Webarchive 支持 XML 和二进制格式。HTML 图片应已保存到网页文件所在目录及其子目录，Webarchive 图片应包含在归档内；资源缺失时保留文本和警告，不联网补取。验证页、无正文文件及不支持的嵌入媒体会明确失败。
+
+默认清理本次生成的内容结构、排版 HTML、Markdown、图片和清单。 验收范围见[本地转换验收](LOCAL_CONVERSION_ACCEPTANCE.md)。`--keep-intermediates` 用于排版调试。`--cleanup-source` 只有在 PDF 已校验、浏览器已关闭并成功写入目标后才删除指定的源网页文件；不删除用户已有的资源目录。若源文件在转换期间发生变化，则保留该文件并发出警告。清理失败会明确提示，已生成的 PDF 仍然有效。
+
 ## AI Agent skill
 
 将仓库的整个 `skills/duckdownloader` 目录复制到 `$CODEX_HOME/skills`；未配置 `CODEX_HOME` 时使用用户主目录的 `.codex/skills`，Windows 通常为 `%USERPROFILE%\.codex\skills`。已有同名 skill 时先比较版本，保留自己的修改。

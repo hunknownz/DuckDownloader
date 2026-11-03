@@ -38,7 +38,8 @@
     "linkedom": "0.18.13",
     "pdf-lib": "1.17.1",
     "playwright-core": "1.62.1",
-    "turndown": "7.2.4"
+    "turndown": "7.2.4",
+    "plist": "5.0.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",

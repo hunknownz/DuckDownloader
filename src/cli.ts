@@ -3,9 +3,10 @@ import { realpathSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { Command, CommanderError, Option } from "commander";
-import { createService } from "./composition.js";
+import { createSavedPageConverter, createService } from "./composition.js";
 import { type SourceId, sourceIds, sources } from "./domain.js";
 import { errorMessage } from "./errors.js";
+import type { SavedPageConverter } from "./ports.js";
 import { type DownloadService, normalizeUrl, resolveSource } from "./service.js";
 
 export interface CliIO {
@@ -20,6 +21,7 @@ export async function runCli(
     out: (message) => process.stdout.write(message),
     err: (message) => process.stderr.write(message),
   },
+  converter: SavedPageConverter = createSavedPageConverter(),
 ): Promise<number> {
   const program = new Command()
     .name("duckdownloader")
@@ -74,6 +76,37 @@ export async function runCli(
         };
         const output = await service.download(request, (loaded, total) =>
           io.err(`render: ${loaded}/${total} pages\n`),
+        );
+        io.out(`${output}\n`);
+      },
+    );
+  program
+    .command("convert")
+    .description("将本地 HTML / Webarchive 提取为内容结构，重新排版导出 PDF")
+    .argument("<file>")
+    .option("-o, --output <path>", "PDF 输出路径")
+    .option("--title <title>", "覆盖文档标题")
+    .option("--keep-intermediates", "保留内容结构、排版 HTML 和图片")
+    .option("--cleanup-source", "PDF 成功后删除这一个源网页文件，保留用户资源目录")
+    .action(
+      async (
+        input: string,
+        options: {
+          output?: string;
+          title?: string;
+          keepIntermediates?: boolean;
+          cleanupSource?: boolean;
+        },
+      ) => {
+        const output = await converter.convert(
+          {
+            input,
+            ...(options.output ? { output: options.output } : {}),
+            ...(options.title ? { title: options.title } : {}),
+            ...(options.keepIntermediates ? { keepIntermediates: true } : {}),
+            ...(options.cleanupSource ? { cleanupSource: true } : {}),
+          },
+          (loaded, total) => io.err(`render: ${loaded}/${total} pages\n`),
         );
         io.out(`${output}\n`);
       },

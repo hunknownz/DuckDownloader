@@ -60,6 +60,15 @@ pnpm dev download "<链接>" -o document.pdf
 
 公众号和飞书先提取为统一内容结构，再按 A4 阅读版式重新排版导出。成功后默认只保留 PDF；加 `--keep-intermediates` 可保留内容结构、HTML、Markdown、本地图片和清单。未完成的采集会保留已有内容并返回错误，详情见[输出说明](docs/USAGE.md#输出与-pdf)。飞书当前不接受 wiki、表格或多维表格链接。
 
+已有本地网页时，可离线重新排版：
+
+```bash
+pnpm dev convert saved.webarchive -o reading.pdf
+pnpm dev convert saved.html -o reading.pdf --cleanup-source
+```
+
+支持 HTML 和 XML／二进制 Webarchive，只使用文件中已保存的图片，不联网补取缺失资源。 验收范围见[本地转换验收](docs/LOCAL_CONVERSION_ACCEPTANCE.md)。默认保留源文件；`--cleanup-source` 在 PDF 成功后只删除指定的那个源网页文件，用户资源目录会保留。
+
 PDF 可选择、复制和搜索原有文字；扫描图片不会自动转成文字。仅下载自己有权访问和导出的内容。
 
 ## 更多说明

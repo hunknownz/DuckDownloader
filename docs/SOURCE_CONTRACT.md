@@ -55,3 +55,11 @@ Quartz 输出必须具有可识别的开头页面裁剪矩形。允许整页等�
 公众号和飞书先生成来源无关的 `DocumentContent` / `DocumentBlock` / `DocumentInline`，涵盖标题、段落、嵌套列表、引用、代码、表格、图片及图注，再交给共享 A4 排版器。原网页样式、脚本和交互控件不进入排版结果。公众号文字消息用首行作标题、按空行分段；完整正文保留，页面地点与发布时间不属于正文。
 
 归档使用 schemaVersion 2.0，新增 content.json；source.html 由统一结构生成。成功时默认清除本次归档，keepIntermediates 为 true 时保留。PDF 仅在浏览器关闭和完整校验后替换目标；失败保留 partial 资料及既有 PDF。排版阶段只允许加载本地归档内文件或 data 资源，禁止联网补取。
+
+## 本地网页导入
+
+`SavedPageConverter` 通过 `LocalExportRequest` 接收 HTML/HTM/Webarchive 路径、可选标题、PDF 输出位置及清理选项。该端口与 `SourceAdapter` 分离，不把本地文件伪装成网址来源；CLI、统一内容结构和排版器仍然来源无关。
+
+本地导入仅读取保存文件及已有图片。HTML 图片的真实路径必须位于源文件的真实目录内；Webarchive 支持 XML 和二进制 plist，图片必须来自归档子资源。不联网补取缺图，不执行网页脚本，不接受验证/拒绝页面、自定义 XML 实体或未适配的嵌入媒体。缺图或子框架等问题保留 partial 正文与警告，并保护既有 PDF。
+
+转换复用共享 A4 排版和 PDF 校验。默认保留源网页，成功后清理本次中间目录；keepIntermediates 可保留调试材料。cleanupSource 仅在浏览器关闭、PDF 完整校验并写入成功，且源文件身份、大小和修改时间仍与导入时一致时删除这一个源文件。源文件变化或删除失败时明确警告；用户资源目录不随之删除。
