@@ -156,7 +156,7 @@ export async function normalizePrintedPdf(
     }
   }
   document.setTitle(title);
-  document.setCreator("ScribdDock");
+  document.setCreator("DuckDownloader");
   await writeFile(path, await document.save());
 }
 

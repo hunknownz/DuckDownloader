@@ -2,7 +2,7 @@
 
 审计日期：2026-10-08。参考仓库为 [ma-pony/scribd-downloader](https://github.com/ma-pony/scribd-downloader)，基线提交为 `1ae93a753cdb56581d3cc7ffd5d674480519e682`。已检查全部六个源码模块、五个测试文件、README、安装配置及设计/验收文档；设计文档中未实现的设想不算已有功能。
 
-参考项目的本地浏览器启动文件已有宿主 OS、en-US 和登录窗口大小的调整，用来解决乱码。本次对照保留这项调整，没有修改参考源码。ScribdDock 保持自己的全新 Git 历史。
+参考项目的本地浏览器启动文件已有宿主 OS、en-US 和登录窗口大小的调整，用来解决乱码。本次对照保留这项调整，没有修改参考源码。DuckDownloader 保持自己的全新 Git 历史。
 
 ## 功能对应
 
@@ -64,7 +64,7 @@
 
 - 全部应用代码为 TS；使用官方 TS Camoufox SDK，不调用 Python 下载器，不自动换用 Chromium。两种 SDK 的内核、默认视口和字体环境可能不同；可见页面布局需要实际比较。
 - Windows 在同一 Camoufox 中明确使用 WebDriver 原生 PDF 后端；原参考的 `window.print()` 设置在 Windows runner 没有生成 PDF。macOS 保持已有流程，失败不自动切换打印后端。Windows 独立文字对照使用 CI 专用 pypdf，应用运行不依赖 Python。
-- 项目名称、profile 路径、中文提示，以及 sources/inspect 命令属于 ScribdDock。旧 profile 仅能通过明确配置路径复用，不自动复制凭据。
+- 项目名称、profile 路径、中文提示，以及 sources/inspect 命令属于 DuckDownloader。兼容改名前的 profile 路径与环境变量，原位复用既有目录，不复制凭据；旧 Python 下载器的 profile 仍需明确配置路径。
 - 输入域名、端口和资源主机校验更严格；不复刻参考实现对相似域名的宽松处理。文件名也清理更多 Unicode 控制字符，并避开 Windows 保留名称。
 - 输出是阅读器重建 PDF，非上传原文件。扫描文档仍没有文本层，不添加 OCR，不退回截图。
 - 页面实际溢出时扩展打印区域；Quartz 页框仅在开头裁剪矩形与布局纵横比及全局打印比例匹配时校正，并同步恢复文字、图形和链接坐标。纸张尺寸和文件大小可以不同。

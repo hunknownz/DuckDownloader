@@ -18,7 +18,12 @@ export function normalizeUrl(input: string): string {
 
 export function resolveSource(input: string): SourceSpec {
   const hostname = new URL(normalizeUrl(input)).hostname;
-  const source = sources.find((candidate) => candidate.hosts.includes(hostname));
+  const source = sources.find(
+    (candidate) =>
+      candidate.hosts.includes(hostname) ||
+      (candidate.includeSubdomains &&
+        candidate.hosts.some((host) => hostname.endsWith(`.${host}`))),
+  );
   if (!source) throw new DownloaderError(`URL: 未支持的来源 ${hostname}`);
   return source;
 }
@@ -34,10 +39,15 @@ export class DownloadService {
     return adapter;
   }
 
-  async login(sourceId: SourceId = "scribd"): Promise<void> {
+  async login(sourceId: SourceId = "scribd", targetUrl?: string): Promise<void> {
     const source = sources.find((candidate) => candidate.id === sourceId);
     if (!source) throw new DownloaderError(`未知来源 ${sourceId}`);
-    await this.adapter(source, "login").login();
+    if (targetUrl) {
+      const url = normalizeUrl(targetUrl);
+      if (resolveSource(url).id !== sourceId)
+        throw new DownloaderError("login: 目标链接与登录来源不匹配");
+      await this.adapter(source, "login").login(url);
+    } else await this.adapter(source, "login").login();
   }
 
   async download(request: DownloadRequest, progress?: ProgressCallback): Promise<string> {

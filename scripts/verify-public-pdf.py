@@ -1,4 +1,4 @@
-"""Independent CI-only text QA; the ScribdDock runtime does not use Python."""
+"""Independent CI-only text QA; the DuckDownloader runtime does not use Python."""
 
 import hashlib
 import json

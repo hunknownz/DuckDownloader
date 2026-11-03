@@ -1,22 +1,22 @@
-# ScribdDock
+# DuckDownloader
 
-将 Scribd 文档下载为 PDF，支持登录和游客模式，保留文档已有的文字层。
+将 Scribd 文档、微信公众号文章和获授权的飞书文档保存到本地，支持独立登录会话和游客模式，使用 Camoufox 原生打印保留可复制文字。
 
-目前支持 Scribd 文档及嵌入链接，适用于 macOS 和 Windows x64。
+Scribd 已支持文档及嵌入链接；飞书支持获授权的 docx 图文。公众号适配已实现，完整图片下载仍待真实样例验收，暂未启用。实际能力以 `pnpm dev sources --json` 为准；平台与验收范围见[图文验收记录](docs/ARTICLE_ACCEPTANCE.md)。
 
 ## 安装
 
 用 AI Agent 安装：
 
-> 帮我安装 https://github.com/hunknownz/ScribdDock
+> 帮我安装 https://github.com/hunknownz/DuckDownloader
 
-安装时一并安装仓库附带的 [`scribddock` skill](skills/scribddock/SKILL.md)，用于登录、下载和排障。
+安装时一并安装仓库附带的 [`duckdownloader` skill](skills/duckdownloader/SKILL.md)，用于登录、下载和排障。
 
 手动安装需先准备 Node.js 24 和 Git：
 
 ```bash
-git clone https://github.com/hunknownz/ScribdDock.git
-cd ScribdDock
+git clone https://github.com/hunknownz/DuckDownloader.git
+cd DuckDownloader
 npm install -g pnpm@11.19.0
 pnpm install --frozen-lockfile
 pnpm browser:install
@@ -28,7 +28,7 @@ skill 的手动安装方法见[使用说明](docs/USAGE.md#ai-agent-skill)。
 
 通过 skill 下载，直接对 Codex 说：
 
-> 用 $scribddock 下载 https://www.scribd.com/document/990798737/AAGnet，保存到 Downloads 目录。
+> 用 $duckdownloader 下载 https://www.scribd.com/document/990798737/AAGnet，保存到 Downloads 目录。
 
 需要登录时，按 Agent 提示在浏览器中完成登录，再告诉它“已登录”。
 
@@ -50,8 +50,18 @@ pnpm dev download "https://www.scribd.com/document/990798737/AAGnet" -o document
 
 公开且可完整访问的文档可加 `--guest`，无需登录。省略 `-o` 会自动命名文件；更多命令见 `pnpm dev --help`。
 
+公众号和飞书使用目标链接登录，分别保存会话：
+
+```bash
+pnpm dev login --source wechat --url "<公众号文章链接>"
+pnpm dev login --source feishu --url "<飞书 docx 链接>"
+pnpm dev download "<链接>" -o document.pdf
+```
+
+两种图文来源还会在 PDF 旁保存包含 HTML、Markdown、本地图片和清单的独立归档目录。未完成的采集会保留已有内容并返回错误，详情见[输出说明](docs/USAGE.md#输出与-pdf)。飞书当前不接受 wiki、表格或多维表格链接。
+
 PDF 可选择、复制和搜索原有文字；扫描图片不会自动转成文字。仅下载自己有权访问和导出的内容。
 
 ## 更多说明
 
-[使用与排障](docs/USAGE.md) · [Windows 指南](docs/WINDOWS.md) · [AI Agent skill](skills/scribddock/SKILL.md)
+[使用与排障](docs/USAGE.md) · [Windows 指南](docs/WINDOWS.md) · [AI Agent skill](skills/duckdownloader/SKILL.md)

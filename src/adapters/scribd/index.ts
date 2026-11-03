@@ -86,7 +86,7 @@ export class ScribdAdapter implements SourceAdapter {
     try {
       try {
         await mkdir(baseDir, { recursive: true });
-        temporary = await mkdtemp(join(baseDir, ".scribddock-"));
+        temporary = await mkdtemp(join(baseDir, ".duckdownloader-"));
       } catch (error) {
         throw new DownloaderError(
           `output: failed to prepare destination (${errorMessage(error)})`,
@@ -147,7 +147,7 @@ export class ScribdAdapter implements SourceAdapter {
       const message = errorMessage(error);
       const hint =
         request.guest && message.includes("initialization timed out")
-          ? "; 请运行 scribddock login，再省略 --guest 重试"
+          ? "; 请运行 duckdownloader login，再省略 --guest 重试"
           : "";
       if (error instanceof DownloaderError && !hint) throw error;
       throw new DownloaderError(`browser: 下载失败 (${message})${hint}`, { cause: error });

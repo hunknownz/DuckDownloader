@@ -1,7 +1,7 @@
 {
-  "name": "scribddock",
+  "name": "duckdownloader",
   "version": "0.1.0",
-  "description": "A local CLI for the Scribd family of sources",
+  "description": "A local CLI for Scribd, WeChat articles and authorized Feishu documents",
   "private": true,
   "type": "module",
   "engines": {
@@ -9,7 +9,7 @@
   },
   "packageManager": "pnpm@11.19.0",
   "bin": {
-    "scribddock": "dist/cli.js"
+    "duckdownloader": "dist/cli.js"
   },
   "exports": {
     ".": "./dist/index.js"
@@ -35,11 +35,14 @@
     "camoufox": "0.5.8",
     "commander": "15.0.0",
     "pdf-lib": "1.17.1",
-    "playwright-core": "1.62.1"
+    "playwright-core": "1.62.1",
+    "turndown": "7.2.4"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
     "@types/node": "^24.19.1",
+    "@types/turndown": "5.0.6",
+    "linkedom": "0.18.13",
     "tsx": "4.23.15",
     "typescript": "7.0.2",
     "vitest": "5.0.3"

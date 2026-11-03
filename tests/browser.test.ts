@@ -1,10 +1,11 @@
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Camoufox } from "camoufox";
 import { PDFDict, PDFDocument, PDFName } from "pdf-lib";
 import type { Page } from "playwright-core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { ArticleAdapter } from "../src/adapters/article/index.js";
 import type { BrowserSession, PaperRounding } from "../src/adapters/browser.js";
 import { CamoufoxProvider } from "../src/adapters/camoufox.js";
 import { printMarionettePdf, reserveMarionettePort } from "../src/adapters/marionette.js";
@@ -13,7 +14,60 @@ import { evaluateMainWorld } from "../src/adapters/scribd/evaluate.js";
 import { prepareExportDom } from "../src/adapters/scribd/renderer.js";
 import { PRINT_DOCUMENT_SCRIPT } from "../src/adapters/scribd/scripts.js";
 
-describe.skipIf(process.env.SCRIBD_BROWSER !== "1")("local Camoufox integration", () => {
+it.skipIf(process.env.DUCKDOWNLOADER_BROWSER !== "1")(
+  "archives a local article fixture and prints multiple A4 pages with native fonts",
+  async () => {
+    const directory = await mkdtemp(join(tmpdir(), "duckdownloader-article-browser-"));
+    const sourceUrl = "https://mp.weixin.qq.com/s/local-fixture";
+    const provider = new CamoufoxProvider();
+    try {
+      const output = join(directory, "article.pdf");
+      const adapter = new ArticleAdapter("wechat", {
+        async open(options) {
+          const session = await provider.open(options);
+          try {
+            await session.context.route(sourceUrl, (route) =>
+              route.fulfill({
+                contentType: "text/html; charset=utf-8",
+                body: `<h1 id="activity-name">中文文章 Native text</h1><div id="js_content">${Array.from({ length: 60 }, (_, i) => `<p>Paragraph ${i + 1}: 可复制的正文 Native selectable text.</p>`).join("")}<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="></div>`,
+              }),
+            );
+            return session;
+          } catch (error) {
+            await session.close();
+            throw error;
+          }
+        },
+      });
+      await adapter.download({ url: sourceUrl, guest: true, output });
+      const pdf = await PDFDocument.load(await readFile(output));
+      expect(pdf.getPageCount()).toBeGreaterThan(1);
+      for (const page of pdf.getPages()) {
+        expect(page.getWidth()).toBeCloseTo((210 / 25.4) * 72, 2);
+        expect(page.getHeight()).toBeCloseTo((297 / 25.4) * 72, 2);
+        expect(
+          page.node.Resources()?.lookupMaybe(PDFName.of("Font"), PDFDict)?.keys().length,
+        ).toBeGreaterThan(0);
+      }
+      const archive = (await readdir(directory)).find((name) =>
+        name.startsWith("article.pdf.archive-"),
+      )!;
+      const manifest = JSON.parse(
+        await readFile(join(directory, archive, "artifact.json"), "utf8"),
+      );
+      expect(manifest.status).toBe("succeeded");
+      expect(manifest.assets).toHaveLength(1);
+      expect(await readFile(join(directory, archive, "article.md"), "utf8")).toContain(
+        "Paragraph 60",
+      );
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  },
+  120_000,
+);
+
+describe.skipIf(process.env.DUCKDOWNLOADER_BROWSER !== "1")("local Camoufox integration", () => {
   let session: BrowserSession;
   let page: Page;
   beforeAll(async () => {
@@ -57,7 +111,7 @@ describe.skipIf(process.env.SCRIBD_BROWSER !== "1")("local Camoufox integration"
       await evaluateMainWorld(
         page,
         `mw:() => {
-      const e=document.querySelector('#scribddock-pages > *');
+      const e=document.querySelector('#duckdownloader-pages > *');
       return {width:e.clientWidth,height:e.clientHeight,scrollWidth:e.scrollWidth,scrollHeight:e.scrollHeight};
     }`,
       );
@@ -81,10 +135,10 @@ describe.skipIf(process.env.SCRIBD_BROWSER !== "1")("local Camoufox integration"
   });
 });
 
-it.skipIf(process.env.SCRIBD_BROWSER !== "1")(
+it.skipIf(process.env.DUCKDOWNLOADER_BROWSER !== "1")(
   "prints the intended tab through Firefox WebDriver with native fonts",
   async () => {
-    const directory = await mkdtemp(join(tmpdir(), "scribddock-webdriver-print-"));
+    const directory = await mkdtemp(join(tmpdir(), "duckdownloader-webdriver-print-"));
     try {
       const port = await reserveMarionettePort();
       const browser = await Camoufox({
@@ -129,10 +183,10 @@ it.skipIf(process.env.SCRIBD_BROWSER !== "1")(
   120_000,
 );
 
-it.skipIf(process.env.SCRIBD_BROWSER !== "1")(
+it.skipIf(process.env.DUCKDOWNLOADER_BROWSER !== "1")(
   "persists a synthetic session across restarts in a Unicode profile path",
   async () => {
-    const directory = await mkdtemp(join(tmpdir(), "scribddock-profile-"));
+    const directory = await mkdtemp(join(tmpdir(), "duckdownloader-profile-"));
     const profile = join(directory, "用户 profile");
     const provider = new CamoufoxProvider();
     try {
@@ -169,10 +223,10 @@ it.skipIf(process.env.SCRIBD_BROWSER !== "1")(
   60_000,
 );
 
-it.skipIf(process.env.SCRIBD_BROWSER !== "1")(
+it.skipIf(process.env.DUCKDOWNLOADER_BROWSER !== "1")(
   "prints successive paper sizes with native fonts and correct page boxes",
   async () => {
-    const directory = await mkdtemp(join(tmpdir(), "scribddock-native-print-"));
+    const directory = await mkdtemp(join(tmpdir(), "duckdownloader-native-print-"));
     try {
       for (const [width, height] of [
         [750, 1000],

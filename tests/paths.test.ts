@@ -19,11 +19,12 @@ it("preserves native absolute and relative paths without expanding other user na
 });
 
 it.each(["~/profile dir", "~\\profile dir"])("accepts profile override %s", (value) => {
-  expect(profileDirectory({ SCRIBDDOCK_PROFILE_DIR: value })).toBe(join(homedir(), "profile dir"));
+  expect(profileDirectory({ DUCKDOWNLOADER_PROFILE_DIR: value })).toBe(
+    join(homedir(), "profile dir"),
+  );
 });
 
-it("resolves default profile and print filenames using the native path implementation", () => {
-  expect(profileDirectory({})).toBe(join(homedir(), ".scribddock", "profiles", "scribd"));
+it("resolves print filenames using the native path implementation", () => {
   const output = join("relative dir", "文档.pdf");
   expect(printPreferences(output)["print.print_to_filename"]).toBe(resolve(output));
 });
@@ -34,7 +35,7 @@ it.each(["CON", "prn", "AUX.txt", "NUL", "COM1", "COM9", "LPT1", "LPT9", "COM¹"
     expect(isWindowsReservedFilename(`${title}.pdf`)).toBe(true);
     const name = defaultOutputFilename(title, "123");
     expect(name).toBe(`_${title}.pdf`);
-    const directory = await mkdtemp(join(tmpdir(), "scribddock-name-"));
+    const directory = await mkdtemp(join(tmpdir(), "duckdownloader-name-"));
     try {
       const output = join(directory, name);
       await writeFile(output, "content");

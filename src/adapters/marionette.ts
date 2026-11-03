@@ -155,7 +155,7 @@ export async function printMarionettePdf(
   const token = randomUUID();
   await evaluateMainWorld(
     page,
-    "mw:(token) => document.documentElement.setAttribute('data-scribddock-print', token)",
+    "mw:(token) => document.documentElement.setAttribute('data-duckdownloader-print', token)",
     token,
   );
   let client: MarionetteClient | undefined;
@@ -171,7 +171,7 @@ export async function printMarionettePdf(
       await client.command("WebDriver:SwitchToWindow", { handle });
       const marker = resultValue(
         await client.command("WebDriver:ExecuteScript", {
-          script: "return document.documentElement.getAttribute('data-scribddock-print');",
+          script: "return document.documentElement.getAttribute('data-duckdownloader-print');",
           args: [],
           newSandbox: true,
           sandbox: "default",
@@ -215,7 +215,7 @@ export async function printMarionettePdf(
     client?.close();
     await evaluateMainWorld(
       page,
-      "mw:() => document.documentElement.removeAttribute('data-scribddock-print')",
+      "mw:() => document.documentElement.removeAttribute('data-duckdownloader-print')",
     ).catch(() => {});
   }
 }

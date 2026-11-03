@@ -1,6 +1,6 @@
-# ScribdDock 开发约定
+# DuckDownloader 开发约定
 
-先读 README.md 和 docs/SOURCE_CONTRACT.md。产品范围仅限 Scribd、SlideShare、Everand、Fable；当前只实现 Scribd，其他来源如实标记待适配。
+先读 README.md 和 docs/SOURCE_CONTRACT.md。产品范围包括 Scribd、SlideShare、Everand、Fable、微信公众号和飞书/Lark；来源能力以 domain 目录中的实际状态为准，未通过真实授权样例验收的来源保持待适配。
 
 ## 架构
 

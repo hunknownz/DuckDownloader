@@ -1,13 +1,14 @@
 # 按失败阶段排查
 
-先确定执行的是 ScribdDock 还是原 Python 下载器，记录 OS/架构、Node/pnpm、锁定 SDK、guest/保存会话模式、脱敏错误和输出位置。不要为了收集版本把全部环境变量、请求头或 URL 中的令牌输出到日志。
+先确定执行的是 DuckDownloader 还是原 Python 下载器，记录 OS/架构、Node/pnpm、锁定 SDK、guest/保存会话模式、脱敏错误和输出位置。不要为了收集版本把全部环境变量、请求头或 URL 中的令牌输出到日志。
 
 | 现象 | 有依据的检查和处理 |
 | --- | --- |
 | `Failed to spawn: scribd-downloader` | 这是原 Python 命令入口。定位 TS checkout 后用其 `pnpm dev --help`；不要反复安装同名 Python 包。 |
 | Camoufox 内核缺失或不兼容 | 使用该 checkout 的 `pnpm browser:install`，由锁定官方 SDK 选择兼容内核。不硬编码可执行文件或混用 Python SDK 缓存。安装器遇 API 限流时按 checkout 的 `docs/USAGE.md` 处理，不反复强制下载。 |
 | 浏览器 UI 乱码且没到登录页 | 查启动/导航错误和当前实现是否使用宿主 OS、`en-US` locale；当前适配器已经配置这些参数。不能仅凭截图断言是字体或 profile 损坏；先保留 profile，用已有浏览器测试或独立临时 profile 复现启动，不直接重置用户会话。 |
-| 已按 Enter，但再次提示登录 | Enter 只表示保存会话。检查下载是否误用了 `--guest`、是否仍使用同一个 `SCRIBDDOCK_PROFILE_DIR`，再在 Camoufox 中人工登录。没有账号状态证据时报告“会话已保存，登录状态尚未验证”。 |
+| 已按 Enter，但再次提示登录 | Enter 只表示保存会话。检查下载是否误用了 `--guest`、是否仍使用同一来源的 profile 覆盖变量（Scribd 为 `DUCKDOWNLOADER_PROFILE_DIR`，公众号/飞书为 `DUCKDOWNLOADER_WECHAT_PROFILE_DIR` / `DUCKDOWNLOADER_FEISHU_PROFILE_DIR`），再在 Camoufox 中人工登录。没有账号状态证据时报告“会话已保存，登录状态尚未验证”。 |
+| 图文来源返回 partial | 查看对应归档的 artifact.json 警告，区分缺失章节、未支持内容块与图片失败；保留可读内容和原有 PDF。先核实真实页面及权限，不跳过完整性检查。 |
 | profile 占用或权限错误 | 确认同一 profile 没有另一个活动会话；只关闭属于本次操作的会话。POSIX 是 `0700`，Windows 继承 NTFS ACL。明确重置请求才先备份目录；不删除锁文件来强行并发。 |
 | 页面初始化超时、403、验证码 | 查看 `navigation`/`initialization` 阶段和页面是否允许访问。需要用户在可见窗口处理登录或验证码；不重复高速请求或绕过权限。 |
 | 字体、图片、批次加载失败 | 保留脱敏资源类别与页码，检查连接及页面变化。字体等待有界，失败应中止；不跳过字体校验或默认允许空白页。 |

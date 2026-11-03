@@ -18,7 +18,7 @@ import {
 
 let directory: string;
 beforeEach(async () => {
-  directory = await mkdtemp(join(tmpdir(), "scribddock-adapter-"));
+  directory = await mkdtemp(join(tmpdir(), "duckdownloader-adapter-"));
 });
 afterEach(async () => {
   await rm(directory, { recursive: true, force: true });

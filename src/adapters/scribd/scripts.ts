@@ -124,7 +124,7 @@ export const PREPARE_EXPORT_SCRIPT = `mw:({pageCount}) => {
   const height = Math.max(...layouts.map((layout) => layout.height));
 
   const root = document.createElement("main");
-  root.id = "scribddock-pages";
+  root.id = "duckdownloader-pages";
   for (const {page, width: pageWidth, height: pageHeight} of layouts) {
     const element = page.containerElem;
     element.style.setProperty("box-sizing", "border-box", "important");
@@ -137,20 +137,20 @@ export const PREPARE_EXPORT_SCRIPT = `mw:({pageCount}) => {
   document.body.replaceChildren(root);
 
   const style = document.createElement("style");
-  style.id = "scribddock-export-style";
+  style.id = "duckdownloader-export-style";
   style.textContent = \`
     @page { size: \${width}px \${height}px; margin: 0; }
-    html, body, #scribddock-pages {
+    html, body, #duckdownloader-pages {
       margin: 0 !important; padding: 0 !important; width: \${width}px !important;
       height: auto !important; overflow: visible !important; background: white !important;
     }
-    #scribddock-pages > * {
+    #duckdownloader-pages > * {
       display: block !important; position: relative !important;
       margin: 0 !important;
       break-after: page; page-break-after: always;
       overflow: visible !important; box-shadow: none !important;
     }
-    #scribddock-pages > *:last-child {
+    #duckdownloader-pages > *:last-child {
       break-after: auto; page-break-after: auto;
     }
   \`;

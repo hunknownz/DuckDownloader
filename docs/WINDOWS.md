@@ -7,8 +7,8 @@
 先安装 [Node.js 24 LTS x64](https://nodejs.org/en/download) 和 [Git for Windows](https://git-scm.com/download/win)，重新打开终端。下面的命令使用 HTTPS 克隆，不需要配置 SSH 密钥。
 
 ```powershell
-git clone https://github.com/hunknownz/ScribdDock.git
-cd ScribdDock
+git clone https://github.com/hunknownz/DuckDownloader.git
+cd DuckDownloader
 npm install -g pnpm@11.19.0
 pnpm install --frozen-lockfile
 pnpm browser:install
@@ -29,21 +29,21 @@ pnpm dev download "https://www.scribd.com/document/990798737/AAGnet" -o "D:\Docu
 
 | 数据 | Windows 默认目录 |
 | --- | --- |
-| Scribd 登录 profile | `%USERPROFILE%\.scribddock\profiles\scribd` |
+| Scribd 登录 profile | `%USERPROFILE%\.duckdownloader\profiles\scribd` |
 | Camoufox 内核缓存 | `%LOCALAPPDATA%\camoufox\camoufox\Cache` |
 
-两者独立。重新安装内核不会清除登录；清理 profile 也不需要重新下载内核。macOS 的 profile 为 `~/.scribddock/profiles/scribd`，内核缓存为 `~/Library/Caches/camoufox`。
+两者独立。重新安装内核不会清除登录；清理 profile 也不需要重新下载内核。macOS 的 profile 为 `~/.duckdownloader/profiles/scribd`，内核缓存为 `~/Library/Caches/camoufox`。
 
 在当前 PowerShell 会话中可以覆盖 profile 目录：
 
 ```powershell
-$env:SCRIBDDOCK_PROFILE_DIR = "D:\ScribdDock Data\profile"
+$env:DUCKDOWNLOADER_PROFILE_DIR = "D:\DuckDownloader Data\profile"
 pnpm dev login
 ```
 
 后续下载要使用同一个环境变量。路径支持 `~/` 和 `~\` 展开为当前用户主目录。不要把 profile 放进仓库或共享目录；Windows 使用目录继承的 NTFS 权限，POSIX 系统才设置 `0700`。
 
-重置登录时，先关闭使用这个 profile 的 Camoufox，再把目录改名作为备份，然后重新执行 `login`。旧 Python 项目的默认目录是 `~/.scribd-downloader/profile`，ScribdDock 不自动迁移其中的登录数据。
+重置登录时，先关闭使用这个 profile 的 Camoufox，再把目录改名作为备份，然后重新执行 `login`。旧 Python 项目的默认目录是 `~/.scribd-downloader/profile`，DuckDownloader 不自动迁移其中的登录数据。
 
 ## 文件和打印行为
 
@@ -57,7 +57,7 @@ Windows 使用同一个 Camoufox 的 WebDriver 原生打印接口，明确选择
 
 默认 CI 在 Linux 和 Windows 上运行类型检查、格式检查、离线测试及构建，不登录网站。独立的 `Windows smoke` 工作流按需安装真实 Camoufox，检查主世界脚本、打印布局、不同纸张尺寸、字体资源，以及含中文和空格的 profile 目录能否在重启后恢复合成会话；选择公开样例下载时还检查五页文档及每页文字绘制指令。
 
-2026-10-08 已在 Windows Server 2025 x64 runner、Node.js 24、camoufox SDK 0.5.8、内核 156.0.1-beta.36 上通过 [Windows 真实验证](https://github.com/hunknownz/ScribdDock/actions/runs/37692218020)，应用提交为 `91b886b31bdab0cc8b27dbc1738b2254bcef983f`。六项真实浏览器测试通过，覆盖主世界脚本、正常/拒绝的 DOM 布局、含中文和空格的 profile 重启恢复、目标标签页选择、原生字体及两种纸张尺寸。公开五页下载测试通过；编译后 CLI 的另一次下载也通过独立 pypdf 提取，全部五页规范化文字与 Python 参考一致。[Linux / Windows 离线 CI](https://github.com/hunknownz/ScribdDock/actions/runs/37692104825) 同时通过。
+2026-10-08 已在 Windows Server 2025 x64 runner、Node.js 24、camoufox SDK 0.5.8、内核 156.0.1-beta.36 上通过 [Windows 真实验证](https://github.com/hunknownz/DuckDownloader/actions/runs/37692218020)，应用提交为 `91b886b31bdab0cc8b27dbc1738b2254bcef983f`。六项真实浏览器测试通过，覆盖主世界脚本、正常/拒绝的 DOM 布局、含中文和空格的 profile 重启恢复、目标标签页选择、原生字体及两种纸张尺寸。公开五页下载测试通过；编译后 CLI 的另一次下载也通过独立 pypdf 提取，全部五页规范化文字与 Python 参考一致。[Linux / Windows 离线 CI](https://github.com/hunknownz/DuckDownloader/actions/runs/37692104825) 同时通过。
 
 本地 macOS 的六项合成浏览器测试也通过。Windows 桌面真人账号登录、PDF 阅读器中的手动复制以及逐页视觉效果尚未验收；合成会话、自动文字提取和公开文档不能证明订阅受限内容的权限或完整效果。
 

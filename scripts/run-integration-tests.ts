@@ -5,8 +5,8 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const targets = {
-  browser: { flag: "SCRIBD_BROWSER", file: "tests/browser.test.ts" },
-  live: { flag: "SCRIBD_LIVE", file: "tests/live-scribd.test.ts" },
+  browser: { flag: "DUCKDOWNLOADER_BROWSER", file: "tests/browser.test.ts" },
+  live: { flag: "DUCKDOWNLOADER_LIVE", file: "tests/live-scribd.test.ts" },
 } as const;
 const name = process.argv[2];
 if (name !== "browser" && name !== "live") throw new Error("Expected browser or live test target");

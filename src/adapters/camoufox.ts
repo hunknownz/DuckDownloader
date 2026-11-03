@@ -2,11 +2,10 @@ import { resolve } from "node:path";
 import { DownloaderError, errorMessage } from "../errors.js";
 import type { BrowserOptions, BrowserProvider, BrowserSession } from "./browser.js";
 import { printMarionettePdf, reserveMarionettePort } from "./marionette.js";
-import { expandHomePath } from "./paths.js";
+import { sourceProfileDirectory } from "./paths.js";
 
 export function profileDirectory(env: NodeJS.ProcessEnv = process.env): string {
-  const configured = env.SCRIBDDOCK_PROFILE_DIR ?? "~/.scribddock/profiles/scribd";
-  return resolve(expandHomePath(configured));
+  return sourceProfileDirectory("scribd", env);
 }
 
 export function printPreferences(path: string): Record<string, boolean | string> {

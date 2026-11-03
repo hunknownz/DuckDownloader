@@ -21,7 +21,7 @@ import { finalizePdf, normalizePrintedPdf, validatePdf, waitForPdf } from "../sr
 
 let directory: string;
 beforeEach(async () => {
-  directory = await mkdtemp(join(tmpdir(), "scribddock-test-"));
+  directory = await mkdtemp(join(tmpdir(), "duckdownloader-test-"));
 });
 afterEach(async () => {
   await rm(directory, { recursive: true, force: true });

@@ -16,6 +16,7 @@ dist/
 output/
 downloads/
 profiles/
+.duckdownloader/
 .scribddock/
 .env
 .env.*
@@ -25,4 +26,6 @@ coverage/
 *.tsbuildinfo
 *.tgz
 *.log
+*.archive-*/
+.duckdownloader-*/
 .scribddock-*/

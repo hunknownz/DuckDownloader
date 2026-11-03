@@ -1,0 +1,4 @@
+interface:
+  display_name: "DuckDownloader 助手"
+  short_description: "DuckDownloader 的安装、登录、下载与排障，保留现有 profile 和输出文件"
+  default_prompt: "使用 $duckdownloader 检查本机 DuckDownloader 环境，并按我的请求完成安装、登录或文档下载。"

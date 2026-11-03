@@ -19,6 +19,9 @@ describe("source routing", () => {
     ["https://everand.com/book/123/title", "everand"],
     ["https://www.fable.co/book/123", "fable"],
     ["https://SCRIBD.COM/document/123", "scribd"],
+    ["https://mp.weixin.qq.com/s/example", "wechat"],
+    ["https://tenant.feishu.cn/docx/abc", "feishu"],
+    ["https://tenant.larksuite.com/docx/abc", "feishu"],
   ])("routes %s to %s", (url, source) => expect(resolveSource(url).id).toBe(source));
 
   it.each([
@@ -85,5 +88,15 @@ describe("source routing", () => {
     const adapter = new RecordingAdapter();
     await new DownloadService(new Map([["scribd", adapter]])).login();
     expect(adapter.login).toHaveBeenCalledOnce();
+  });
+
+  it("passes a login target only to its matching source", async () => {
+    const adapter = new RecordingAdapter();
+    const service = new DownloadService(new Map([["feishu", adapter]]));
+    const target = "https://tenant.feishu.cn/docx/Abc123";
+    await service.login("feishu", target);
+    expect(adapter.login).toHaveBeenCalledWith(target);
+    await expect(service.login("feishu", "https://mp.weixin.qq.com/s/abc")).rejects.toThrow(/来源/);
+    expect(adapter.login).toHaveBeenCalledTimes(1);
   });
 });

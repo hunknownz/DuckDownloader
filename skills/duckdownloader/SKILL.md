@@ -1,19 +1,19 @@
 ---
-name: scribddock
-description: 使用 ScribdDock 安装环境、手动登录、下载已获授权的 Scribd 文档，或排查 Camoufox、profile 与 PDF 导出问题。用户提到 ScribdDock 或明确要求用该项目处理 Scribd 链接时使用；不用于普通网页下载、其他下载器或未实现来源的下载。
+name: duckdownloader
+description: 使用 DuckDownloader 安装环境、手动登录、下载已获授权的 Scribd 文档、公众号文章和飞书 docx，或排查 Camoufox、profile 与 PDF 导出问题。用户提到 DuckDownloader 或明确要求用该项目处理支持的来源链接时使用；不用于普通网页下载、其他下载器或未实现来源的下载。
 ---
 
-# ScribdDock
+# DuckDownloader
 
 把用户的请求落实为可验证的安装、登录或下载结果；排障时给出失败阶段和下一步依据。项目是 TypeScript CLI，通过官方 Camoufox TS SDK 启动浏览器；不要换成 Python 桥接、系统浏览器或截图拼 PDF。
 
 ## 定位项目与能力
 
-从当前项目、用户给出的路径或此前已确认的 checkout 定位仓库，确认 `package.json` 的包名为 `scribddock`。没有 checkout 且用户要求安装时，clone `https://github.com/hunknownz/ScribdDock.git` 到不冲突的目录；不覆盖已有目录。不要把技能安装目录当作项目目录，也不要硬编码原作者机器路径。
+从当前项目、用户给出的路径或此前已确认的 checkout 定位仓库，确认 `package.json` 的包名为 `duckdownloader`。没有 checkout 且用户要求安装时，clone `https://github.com/hunknownz/DuckDownloader.git` 到不冲突的目录；不覆盖已有目录。不要把技能安装目录当作项目目录，也不要硬编码原作者机器路径。
 
 先读该 checkout 的 `AGENTS.md`、`README.md`；需要安装排障、profile 配置或高级命令时读 `docs/USAGE.md`，涉及导出效果或平台支持时再读 `docs/PDF_EXPORT.md`、`docs/PARITY_AUDIT.md` 或 `docs/WINDOWS.md`。命令和兼容版本以实际 checkout 为准。
 
-运行 `pnpm dev sources --json` 查看当前能力，`pnpm dev inspect "<url>"` 仅识别链接，不联网、不证明权限。当前只有 Scribd 实现下载；SlideShare、Everand、Fable 是规划中的来源，明确拒绝尚未实现的操作。用户要求调研或开发时可说明缺口，不伪装成已经能下载。
+运行 `pnpm dev sources --json` 查看当前能力，`pnpm dev inspect "<url>"` 仅识别链接，不联网、不证明权限。Scribd、公众号和飞书各自有适配器，是否启用必须按该 checkout 的能力目录判断；SlideShare、Everand、Fable 是规划中的来源，明确拒绝尚未实现的操作。用户要求调研或开发时可说明缺口，不伪装成已经能下载。
 
 ## 安装与执行
 
@@ -26,6 +26,8 @@ pnpm dev --help
 pnpm dev sources --json
 pnpm dev inspect "<url>"
 pnpm dev login
+pnpm dev login --source wechat --url "<公众号链接>"
+pnpm dev login --source feishu --url "<飞书 docx 链接>"
 pnpm dev download "<url>" -o "<output.pdf>"
 pnpm dev download "<url>" --guest -o "<output.pdf>"
 ```
@@ -36,9 +38,9 @@ pnpm dev download "<url>" --guest -o "<output.pdf>"
 
 默认下载复用保存的 profile；`--guest` 使用临时会话，不读取登录状态。不要因为登录下载失败就静默改为游客模式。
 
-`pnpm dev login` 打开可见 Camoufox。让用户在该窗口中手动完成登录和验证码，不索要聊天中的密码、Cookie 或验证码。只有用户完成操作后才向登录进程发送 Enter，随后等待正常退出；如需用户配合，保留交互进程并说明等待什么。按 Enter 只是保存并关闭会话，不能称为账号或订阅权限验证成功。
+`pnpm dev login` 打开可见 Camoufox。让用户在该窗口中手动完成登录和验证码，不索要聊天中的密码、Cookie 或验证码。只有用户完成操作后才向登录进程发送 Enter，随后等待正常退出；如需用户配合，保留交互进程并说明等待什么。Scribd 的 Enter 只是保存并关闭会话；公众号和飞书会进一步确认目标正文可读，仍不能据此称为整个账号或订阅权限验证成功。
 
-profile 默认位于用户主目录的 `.scribddock/profiles/scribd`；Windows 通常为 `%USERPROFILE%\.scribddock\profiles\scribd`。`SCRIBDDOCK_PROFILE_DIR` 可覆盖位置，支持 `~/`、`~\` 展开；使用当前进程环境和项目路径函数确认实际位置，不输出完整环境变量。内核缓存与 profile 是两个目录。
+profile 默认位于用户主目录的 `.duckdownloader/profiles/scribd`；Windows 通常为 `%USERPROFILE%\.duckdownloader\profiles\scribd`。`DUCKDOWNLOADER_PROFILE_DIR` 可覆盖位置，支持 `~/`、`~\` 展开；使用当前进程环境和项目路径函数确认实际位置，不输出完整环境变量。公众号与飞书使用独立的 `.duckdownloader/profiles/wechat`、`.duckdownloader/profiles/feishu`；覆盖变量分别为 `DUCKDOWNLOADER_WECHAT_PROFILE_DIR`、`DUCKDOWNLOADER_FEISHU_PROFILE_DIR`。登录和下载必须使用对应来源的同一配置。新环境变量优先于旧的 `SCRIBDDOCK_*` 配置；新默认目录不存在时会原位复用同来源的 `.scribddock/profiles/<来源>`。不要因为改名而重新登录、复制或删除旧会话。内核缓存与 profile 是两个目录。
 
 只有用户要求重置时才处理 profile。先确认相关会话已关闭，然后把实际 profile 重命名为带时间戳的备份，再重新登录；不要递归删除、杀掉全部浏览器、迁移原 Python 项目的 profile，或把备份提交到 Git。
 
@@ -49,6 +51,8 @@ profile 默认位于用户主目录的 `.scribddock/profiles/scribd`；Windows �
 明确输出位置，避免无意覆盖现有文件；未要求覆盖时可选择不冲突的文件名并告知用户。程序在完整 PDF 校验后才替换目标，失败应保留既有文件并清理本次临时目录。不要手工删掉旧文件来“修复”导出失败。
 
 成功后确认退出码为 0、返回的文件存在，再按请求核查页数、文字或外观。报告绝对路径和实际检查过的结果。原生打印保留阅读器已有文字层，扫描图片没有可复制文字，本项目不自动 OCR；结果是阅读器导出的 PDF，不保证与上传原文件字节相同。非空文件、字体资源或内容流都不足以证明每页完整，要求视觉验收时需逐页检查。
+
+公众号与飞书还会在 PDF 旁创建唯一的 `.archive-<随机值>` 目录，保存 HTML、Markdown、本地图片与 artifact.json。遇到不支持内容、缺图或章节不全会留下 partial 归档并返回错误，不覆盖已有 PDF。不能把 partial 当作下载验收通过；根据清单报告缺失范围。仅支持飞书 docx，wiki、表格和多维表格需明确说明尚未适配。
 
 stdout 成功时只有最终路径；渲染进度和错误在 stderr。退出码 0/1/2 分别表示成功、运行失败、参数错误。不要把截图、复制日志或技能校验代替真实下载验收。
 

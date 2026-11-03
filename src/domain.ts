@@ -1,10 +1,11 @@
-export const sourceIds = ["scribd", "slideshare", "everand", "fable"] as const;
+export const sourceIds = ["scribd", "slideshare", "everand", "fable", "wechat", "feishu"] as const;
 export type SourceId = (typeof sourceIds)[number];
 
 export interface SourceSpec {
   readonly id: SourceId;
   readonly name: string;
   readonly hosts: readonly string[];
+  readonly includeSubdomains?: boolean;
   readonly status: "ready" | "planned";
   readonly canLogin: boolean;
   readonly canDownload: boolean;
@@ -53,5 +54,24 @@ export const sources: readonly SourceSpec[] = [
     canLogin: false,
     canDownload: false,
     note: "待调研：先确认可导出的内容和权限",
+  },
+  {
+    id: "wechat",
+    name: "微信公众号",
+    hosts: ["mp.weixin.qq.com"],
+    status: "planned",
+    canLogin: true,
+    canDownload: false,
+    note: "图文适配待真实完整样例验收，暂未启用下载",
+  },
+  {
+    id: "feishu",
+    name: "飞书 / Lark",
+    hosts: ["feishu.cn", "larksuite.com"],
+    includeSubdomains: true,
+    status: "ready",
+    canLogin: true,
+    canDownload: true,
+    note: "获授权 docx 图文、离线归档和原生 A4 PDF；不支持 wiki、表格与嵌入媒体",
   },
 ];

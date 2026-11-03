@@ -38,7 +38,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Build failed" }
           python -m pip install pypdf==6.10.0
           if ($LASTEXITCODE -ne 0) { throw "PDF QA dependency installation failed" }
-          $outputPath = Join-Path $env:RUNNER_TEMP "scribddock-public-five-page.pdf"
+          $outputPath = Join-Path $env:RUNNER_TEMP "duckdownloader-public-five-page.pdf"
           try {
             node dist/cli.js download "https://www.scribd.com/document/884183779/Sample-5-Page-PDF" --guest -o $outputPath
             if ($LASTEXITCODE -ne 0) { throw "Compiled CLI download failed" }

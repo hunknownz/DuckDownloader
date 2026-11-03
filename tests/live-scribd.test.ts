@@ -14,10 +14,10 @@ import { expect, it } from "vitest";
 import { validatePdf } from "../src/adapters/pdf.js";
 import { createService } from "../src/composition.js";
 
-it.skipIf(process.env.SCRIBD_LIVE !== "1")(
+it.skipIf(process.env.DUCKDOWNLOADER_LIVE !== "1")(
   "downloads a public Scribd sample",
   async () => {
-    const directory = await mkdtemp(join(tmpdir(), "scribddock-live-"));
+    const directory = await mkdtemp(join(tmpdir(), "duckdownloader-live-"));
     try {
       const output = join(directory, "sample.pdf");
       let pages = 0;

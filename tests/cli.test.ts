@@ -23,9 +23,21 @@ describe("CLI", () => {
       "slideshare",
       "everand",
       "fable",
+      "wechat",
+      "feishu",
     ]);
-    expect(entries.filter((source: { canDownload: boolean }) => source.canDownload)).toHaveLength(
-      1,
+    expect(
+      entries
+        .filter((source: { canDownload: boolean }) => source.canDownload)
+        .map((source: { id: string }) => source.id),
+    ).toEqual(["scribd", "feishu"]);
+  });
+
+  it("identifies the command by its new name in help output", async () => {
+    const { service, io } = setup();
+    expect(await runCli(["--help"], service, io)).toBe(0);
+    expect(io.out.mock.calls.map(([message]) => message).join("")).toContain(
+      "Usage: duckdownloader",
     );
   });
 
@@ -56,6 +68,19 @@ describe("CLI", () => {
     await runCli(["download", "https://scribd.com/document/123"], service, io);
     expect(adapter.download).toHaveBeenCalledWith(
       { url: "https://scribd.com/document/123", guest: false },
+      expect.any(Function),
+    );
+  });
+
+  it("forwards the Feishu login target and saved-session download through the CLI", async () => {
+    const { adapter, io } = setup();
+    const service = new DownloadService(new Map([["feishu", adapter]]));
+    const url = "https://tenant.feishu.cn/docx/Abc123";
+    expect(await runCli(["login", "--source", "feishu", "--url", url], service, io)).toBe(0);
+    expect(adapter.login).toHaveBeenCalledWith(url);
+    expect(await runCli(["download", url, "-o", "feishu.pdf"], service, io)).toBe(0);
+    expect(adapter.download).toHaveBeenCalledWith(
+      { url, output: "feishu.pdf", guest: false },
       expect.any(Function),
     );
   });

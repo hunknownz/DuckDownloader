@@ -22,8 +22,8 @@ export async function runCli(
   },
 ): Promise<number> {
   const program = new Command()
-    .name("scribddock")
-    .description("Scribd 家族内容下载器")
+    .name("duckdownloader")
+    .description("Scribd、微信公众号与飞书文档下载器")
     .version("0.1.0")
     .exitOverride()
     .configureOutput({ writeOut: io.out, writeErr: io.err });
@@ -50,8 +50,9 @@ export async function runCli(
     .addOption(
       new Option("--source <source>", "登录来源").choices([...sourceIds]).default("scribd"),
     )
-    .action(async (options: { source: SourceId }) => {
-      await service.login(options.source);
+    .option("--url <url>", "在此来源链接中完成登录或访问验证（公众号和飞书需要）")
+    .action(async (options: { source: SourceId; url?: string }) => {
+      await service.login(options.source, options.url);
     });
   program
     .command("download")
