@@ -4,7 +4,7 @@
 
 ## 核心应用层
 
-`SourceSpec` 描述来源 ID、域名、状态、能力和说明。飞书允许点分隔的租户子域；其他来源默认精确匹配主机名。`DownloadRequest` 包含规范化 URL、可选输出路径和 guest 标志。`SourceAdapter` 提供异步 `login(targetUrl?)` 和 download，后者接收只包含 PDF 页数的进度回调，返回文件路径。指定登录链接时必须与所选来源一致。
+`SourceSpec` 描述来源 ID、域名、状态、能力和说明。飞书允许点分隔的租户子域；其他来源默认精确匹配主机名。`DownloadRequest` 包含规范化 URL、可选输出路径、guest 和 keepIntermediates 标志。`SourceAdapter` 提供异步 `login(targetUrl?)` 和 download，后者接收只包含 PDF 页数的进度回调，返回文件路径。指定登录链接时必须与所选来源一致。
 
 `DownloadService` 检查 URL、来源与能力，然后调用明确绑定的适配器。domain、ports、service、errors 不依赖浏览器或 PDF SDK；依赖边界由测试检查。composition.ts 装配具体实现。
 
@@ -49,3 +49,9 @@ Quartz 输出必须具有可识别的开头页面裁剪矩形。允许整页等�
 每次运行在 PDF 同目录创建唯一的 `<filename>.archive-<random>`，保存清洗后的正文 HTML、带本地图片的 HTML、Markdown、assets 与 artifact.json；`source.html` 也是提取后的正文，不是原页面源码。清除脚本、事件和不安全链接。HTTP 图片只从明确的来源资源域名下载，逐次校验重定向，复用当前浏览器请求上下文；blob 图片从当前可读页面保存。不会读取或导出 Cookie。
 
 图片资源受单张 20 MiB、总量 64 MiB 限制。归档记录资源哈希、字节数与警告；内容不完整时保留可读结果并返回错误，不替换既有 PDF。浏览器关闭、PDF 验证均成功后才替换输出。归档 HTML 的本地打印阶段阻止 HTTP/HTTPS 请求，不依赖在线图片。
+
+## 共享图文重排与清理
+
+公众号和飞书先生成来源无关的 `DocumentContent` / `DocumentBlock` / `DocumentInline`，涵盖标题、段落、嵌套列表、引用、代码、表格、图片及图注，再交给共享 A4 排版器。原网页样式、脚本和交互控件不进入排版结果。公众号文字消息用首行作标题、按空行分段；完整正文保留，页面地点与发布时间不属于正文。
+
+归档使用 schemaVersion 2.0，新增 content.json；source.html 由统一结构生成。成功时默认清除本次归档，keepIntermediates 为 true 时保留。PDF 仅在浏览器关闭和完整校验后替换目标；失败保留 partial 资料及既有 PDF。排版阶段只允许加载本地归档内文件或 data 资源，禁止联网补取。

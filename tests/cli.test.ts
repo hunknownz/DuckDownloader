@@ -30,7 +30,7 @@ describe("CLI", () => {
       entries
         .filter((source: { canDownload: boolean }) => source.canDownload)
         .map((source: { id: string }) => source.id),
-    ).toEqual(["scribd", "feishu"]);
+    ).toEqual(["scribd", "wechat", "feishu"]);
   });
 
   it("identifies the command by its new name in help output", async () => {
@@ -85,6 +85,19 @@ describe("CLI", () => {
     );
   });
 
+  it("downloads a WeChat article with its saved session and retains intermediates on request", async () => {
+    const { adapter, io } = setup();
+    const service = new DownloadService(new Map([["wechat", adapter]]));
+    const url = "https://mp.weixin.qq.com/s/authorized-article";
+    expect(
+      await runCli(["download", url, "-o", "wechat.pdf", "--keep-intermediates"], service, io),
+    ).toBe(0);
+    expect(adapter.download).toHaveBeenCalledWith(
+      { url, output: "wechat.pdf", guest: false, keepIntermediates: true },
+      expect.any(Function),
+    );
+  });
+
   it("returns a failure for planned sources", async () => {
     const { adapter, service, io } = setup();
     expect(await runCli(["download", "https://fable.co/book/123"], service, io)).toBe(1);
@@ -105,5 +118,18 @@ describe("CLI", () => {
     const { service, io } = setup();
     expect(await runCli(["login", "--source", "unknown"], service, io)).toBe(2);
     expect(io.err).toHaveBeenCalled();
+  });
+
+  it("allows source downloads to retain intermediate content explicitly", async () => {
+    const { service, adapter, io } = setup();
+    await runCli(
+      ["download", "https://scribd.com/document/123", "--keep-intermediates"],
+      service,
+      io,
+    );
+    expect(adapter.download).toHaveBeenCalledWith(
+      { url: "https://scribd.com/document/123", guest: false, keepIntermediates: true },
+      expect.any(Function),
+    );
   });
 });

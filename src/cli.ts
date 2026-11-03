@@ -60,17 +60,24 @@ export async function runCli(
     .argument("<url>")
     .option("-o, --output <path>", "PDF 输出路径")
     .option("--guest", "使用临时会话，不读取已保存登录")
-    .action(async (url: string, options: { output?: string; guest?: boolean }) => {
-      const request = {
-        url,
-        guest: options.guest ?? false,
-        ...(options.output ? { output: options.output } : {}),
-      };
-      const output = await service.download(request, (loaded, total) =>
-        io.err(`render: ${loaded}/${total} pages\n`),
-      );
-      io.out(`${output}\n`);
-    });
+    .option("--keep-intermediates", "保留图文内容结构、排版 HTML 和图片供排查")
+    .action(
+      async (
+        url: string,
+        options: { output?: string; guest?: boolean; keepIntermediates?: boolean },
+      ) => {
+        const request = {
+          url,
+          guest: options.guest ?? false,
+          ...(options.output ? { output: options.output } : {}),
+          ...(options.keepIntermediates ? { keepIntermediates: true } : {}),
+        };
+        const output = await service.download(request, (loaded, total) =>
+          io.err(`render: ${loaded}/${total} pages\n`),
+        );
+        io.out(`${output}\n`);
+      },
+    );
   try {
     await program.parseAsync(args, { from: "user" });
     return 0;

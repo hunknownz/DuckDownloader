@@ -11,6 +11,7 @@ dist/
 *.ppt
 *.pptx
 *.epub
+*.webarchive
 *.mp3
 *.m4b
 output/

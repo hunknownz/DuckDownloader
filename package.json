@@ -29,11 +29,13 @@
     "test": "vitest run",
     "test:live": "tsx scripts/run-integration-tests.ts live",
     "test:browser": "tsx scripts/run-integration-tests.ts browser",
-    "browser:install": "tsx scripts/install-browser.ts"
+    "browser:install": "tsx scripts/install-browser.ts",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "camoufox": "0.5.8",
     "commander": "15.0.0",
+    "linkedom": "0.18.13",
     "pdf-lib": "1.17.1",
     "playwright-core": "1.62.1",
     "turndown": "7.2.4"
@@ -42,7 +44,7 @@
     "@biomejs/biome": "2.5.15",
     "@types/node": "^24.19.1",
     "@types/turndown": "5.0.6",
-    "linkedom": "0.18.13",
+    "@vitest/coverage-v8": "5.0.3",
     "tsx": "4.23.15",
     "typescript": "7.0.2",
     "vitest": "5.0.3"

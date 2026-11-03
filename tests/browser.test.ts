@@ -39,7 +39,7 @@ it.skipIf(process.env.DUCKDOWNLOADER_BROWSER !== "1")(
           }
         },
       });
-      await adapter.download({ url: sourceUrl, guest: true, output });
+      await adapter.download({ url: sourceUrl, guest: true, output, keepIntermediates: true });
       const pdf = await PDFDocument.load(await readFile(output));
       expect(pdf.getPageCount()).toBeGreaterThan(1);
       for (const page of pdf.getPages()) {

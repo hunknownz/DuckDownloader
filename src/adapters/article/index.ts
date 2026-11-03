@@ -1,10 +1,8 @@
-import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, rm } from "node:fs/promises";
 import { basename, dirname, join, resolve } from "node:path";
 import { stdin, stdout } from "node:process";
 import { createInterface } from "node:readline/promises";
 import { setTimeout as delay } from "node:timers/promises";
-import { pathToFileURL } from "node:url";
-import { PDFDocument } from "pdf-lib";
 import type { Page } from "playwright-core";
 import type { DownloadRequest } from "../../domain.js";
 import { DownloaderError, errorMessage } from "../../errors.js";
@@ -12,20 +10,14 @@ import { defaultOutputFilename, isWindowsReservedFilename } from "../../filename
 import type { ProgressCallback, SourceAdapter } from "../../ports.js";
 import type { BrowserProvider, PaperRounding } from "../browser.js";
 import { CamoufoxProvider } from "../camoufox.js";
+import { finishDocumentPdf, printDocument, recordDocumentFailure } from "../document/export.js";
 import { evaluateMainWorld } from "../evaluate.js";
 import { expandHomePath, sourceProfileDirectory } from "../paths.js";
-import { finalizePdf, normalizePrintedPdf, waitForPdf } from "../pdf.js";
-import { PRINT_DOCUMENT_SCRIPT } from "../scribd/scripts.js";
 import { writeArticleArchive } from "./archive.js";
-import {
-  ARTICLE_RESOURCES_SCRIPT,
-  ARTICLE_STATUS_SCRIPT,
-  CAPTURE_ARTICLE_SCRIPT,
-} from "./scripts.js";
+import { ARTICLE_STATUS_SCRIPT, CAPTURE_ARTICLE_SCRIPT } from "./scripts.js";
 import type { ArticleSource, CapturedArticle } from "./types.js";
 import { parseArticleUrl } from "./urls.js";
 
-const paper = { width: (210 / 25.4) * 96, height: (297 / 25.4) * 96 };
 export interface ArticleOptions {
   readonly profile?: string;
   readonly confirmLogin?: () => Promise<void>;
@@ -152,45 +144,24 @@ export class ArticleAdapter implements SourceAdapter {
           throw new DownloaderError(
             `内容不完整，已保留 ${archiveDirectory}：${archive.manifest.warnings.join("；")}`,
           );
-        const printable = await session.context.newPage();
-        await printable.route(/^https?:\/\//, (route) => route.abort("blockedbyclient"));
-        await printable.goto(pathToFileURL(archive.htmlPath).href, {
-          waitUntil: "load",
-          timeout: this.timeoutMs,
-        });
-        if (!(await evaluateMainWorld<boolean>(printable, ARTICLE_RESOURCES_SCRIPT)))
-          throw new DownloaderError("print: 本地图片未完整加载");
-        if (session.printPdf) ({ paperRounding } = await session.printPdf(printable, paper));
-        else await evaluateMainWorld(printable, PRINT_DOCUMENT_SCRIPT);
-        await waitForPdf(partial);
+        paperRounding = await printDocument(session, archive.htmlPath, partial, this.timeoutMs);
       } finally {
         await session.close();
       }
       if (!output || !manifest || !archiveDirectory)
         throw new DownloaderError("PDF: 没有完成的文档");
-      await normalizePrintedPdf(partial, paper, title, paperRounding);
-      const pages = (await PDFDocument.load(await readFile(partial))).getPageCount();
-      progress?.(pages, pages);
-      manifest.pdf = output;
-      manifest.pdfPages = pages;
-      await writeFile(
-        join(archiveDirectory, "artifact.json"),
-        JSON.stringify(manifest, null, 2),
-        "utf8",
-      );
-      await finalizePdf(partial, output, pages);
-      return output;
+      return await finishDocumentPdf({
+        partial,
+        output,
+        title,
+        rounding: paperRounding,
+        archive: archiveDirectory,
+        ...(request.keepIntermediates ? { keepIntermediates: true } : {}),
+        ...(progress ? { progress } : {}),
+      });
     } catch (error) {
       if (archiveDirectory) {
-        const path = join(archiveDirectory, "artifact.json");
-        try {
-          const manifest = JSON.parse(await readFile(path, "utf8"));
-          manifest.status = "partial";
-          delete manifest.pdf;
-          delete manifest.pdfPages;
-          manifest.warnings.push(errorMessage(error));
-          await writeFile(path, JSON.stringify(manifest, null, 2), "utf8");
-        } catch {}
+        await recordDocumentFailure(archiveDirectory, error).catch(() => {});
       }
       if (error instanceof DownloaderError) throw error;
       throw new DownloaderError(`${this.source}: 下载失败 (${errorMessage(error)})`, {

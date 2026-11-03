@@ -16,6 +16,50 @@ export interface DownloadRequest {
   readonly url: string;
   readonly output?: string;
   readonly guest: boolean;
+  readonly keepIntermediates?: boolean;
+}
+
+export type DocumentInline =
+  | { readonly type: "text"; readonly text: string }
+  | { readonly type: "break" }
+  | { readonly type: "strong" | "emphasis" | "code"; readonly children: readonly DocumentInline[] }
+  | { readonly type: "link"; readonly href: string; readonly children: readonly DocumentInline[] };
+
+export interface DocumentCell {
+  readonly header: boolean;
+  readonly colSpan: number;
+  readonly rowSpan: number;
+  readonly blocks: readonly DocumentBlock[];
+}
+
+export type DocumentBlock =
+  | {
+      readonly type: "heading";
+      readonly level: number;
+      readonly content: readonly DocumentInline[];
+    }
+  | { readonly type: "paragraph"; readonly content: readonly DocumentInline[] }
+  | {
+      readonly type: "image";
+      readonly reference: string;
+      readonly alt: string;
+      readonly caption?: readonly DocumentInline[];
+    }
+  | {
+      readonly type: "list";
+      readonly ordered: boolean;
+      readonly start: number;
+      readonly items: readonly (readonly DocumentBlock[])[];
+    }
+  | { readonly type: "quote"; readonly blocks: readonly DocumentBlock[] }
+  | { readonly type: "code"; readonly text: string }
+  | { readonly type: "table"; readonly rows: readonly (readonly DocumentCell[])[] }
+  | { readonly type: "divider" };
+
+export interface DocumentContent {
+  readonly title: string;
+  readonly sourceUrl: string;
+  readonly blocks: readonly DocumentBlock[];
 }
 
 export const sources: readonly SourceSpec[] = [
@@ -59,10 +103,10 @@ export const sources: readonly SourceSpec[] = [
     id: "wechat",
     name: "微信公众号",
     hosts: ["mp.weixin.qq.com"],
-    status: "planned",
+    status: "ready",
     canLogin: true,
-    canDownload: false,
-    note: "图文适配待真实完整样例验收，暂未启用下载",
+    canDownload: true,
+    note: "公众号文章与文字消息，图文重排和原生 A4 PDF；不支持嵌入媒体",
   },
   {
     id: "feishu",

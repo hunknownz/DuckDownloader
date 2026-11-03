@@ -2,7 +2,7 @@
 
 将 Scribd 文档、微信公众号文章和获授权的飞书文档保存到本地，支持独立登录会话和游客模式，使用 Camoufox 原生打印保留可复制文字。
 
-Scribd 已支持文档及嵌入链接；飞书支持获授权的 docx 图文。公众号适配已实现，完整图片下载仍待真实样例验收，暂未启用。实际能力以 `pnpm dev sources --json` 为准；平台与验收范围见[图文验收记录](docs/ARTICLE_ACCEPTANCE.md)。
+Scribd 已支持文档及嵌入链接；飞书支持获授权的 docx 图文。公众号支持文章和文字消息，已通过包含 4 张配图的真实文章及纯文字消息验收。实际能力以 `pnpm dev sources --json` 为准；平台与验收范围见[图文验收记录](docs/ARTICLE_ACCEPTANCE.md)。
 
 ## 安装
 
@@ -58,7 +58,7 @@ pnpm dev login --source feishu --url "<飞书 docx 链接>"
 pnpm dev download "<链接>" -o document.pdf
 ```
 
-两种图文来源还会在 PDF 旁保存包含 HTML、Markdown、本地图片和清单的独立归档目录。未完成的采集会保留已有内容并返回错误，详情见[输出说明](docs/USAGE.md#输出与-pdf)。飞书当前不接受 wiki、表格或多维表格链接。
+公众号和飞书先提取为统一内容结构，再按 A4 阅读版式重新排版导出。成功后默认只保留 PDF；加 `--keep-intermediates` 可保留内容结构、HTML、Markdown、本地图片和清单。未完成的采集会保留已有内容并返回错误，详情见[输出说明](docs/USAGE.md#输出与-pdf)。飞书当前不接受 wiki、表格或多维表格链接。
 
 PDF 可选择、复制和搜索原有文字；扫描图片不会自动转成文字。仅下载自己有权访问和导出的内容。
 

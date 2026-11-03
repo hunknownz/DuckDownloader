@@ -4,6 +4,8 @@ import { join } from "node:path";
 import type { BrowserContext } from "playwright-core";
 import TurndownService from "turndown";
 import { DownloaderError } from "../../errors.js";
+import { documentImages, parseDocumentContent } from "../document/parse.js";
+import { renderBody, renderDocument } from "../document/render.js";
 import type { CapturedArticle, CapturedImage } from "./types.js";
 
 const maxImageBytes = 20 * 1024 * 1024;
@@ -40,7 +42,7 @@ function allowedImageUrl(input: string): URL {
 
 async function imageBytes(
   image: CapturedImage,
-  context: BrowserContext,
+  context?: BrowserContext,
 ): Promise<{ bytes: Buffer; mediaType: string }> {
   if (image.dataBase64) {
     if (
@@ -50,6 +52,7 @@ async function imageBytes(
       throw new DownloaderError("图片 base64 数据无效或过大");
     return { bytes: Buffer.from(image.dataBase64, "base64"), mediaType: image.mediaType };
   }
+  if (!context) throw new DownloaderError("离线导入缺少本地图片，不会请求网络资源");
   let url = allowedImageUrl(image.sourceUrl);
   for (let redirect = 0; redirect <= 5; redirect++) {
     const response = await context.request.get(url.href, {
@@ -91,8 +94,10 @@ export interface ArticleArchive {
     title: string;
     status: "partial" | "succeeded";
     sections: number;
+    blockCount: number;
     assets: Array<{
       sourceUrl: string;
+      reference: string;
       path: string;
       mediaType: string;
       bytes: number;
@@ -108,11 +113,11 @@ export async function writeArticleArchive(
   article: CapturedArticle,
   source: string,
   directory: string,
-  context: BrowserContext,
+  context?: BrowserContext,
 ): Promise<ArticleArchive> {
   await mkdir(directory, { recursive: true });
-  let html = article.html;
-  const warnings = [...article.warnings];
+  const parsed = parseDocumentContent(article);
+  const warnings = [...article.warnings, ...parsed.warnings];
   const assets: ArticleArchive["manifest"]["assets"] = [];
   const localized = new Map<string, string>();
   let totalBytes = 0;
@@ -129,10 +134,16 @@ export async function writeArticleArchive(
         path = `assets/${sha256}${mediaExtensions[mediaType]}`;
         await mkdir(join(directory, "assets"), { recursive: true });
         await writeFile(join(directory, path), bytes);
-        assets.push({ sourceUrl: image.sourceUrl, path, mediaType, bytes: bytes.length, sha256 });
+        assets.push({
+          sourceUrl: image.sourceUrl,
+          reference: image.reference,
+          path,
+          mediaType,
+          bytes: bytes.length,
+          sha256,
+        });
         localized.set(image.reference, path);
       }
-      html = html.split(escapeHtml(image.reference)).join(path);
     } catch (error) {
       const reason = (error instanceof Error ? error.message : String(error))
         .split(/\r?\n/)[0]!
@@ -140,38 +151,46 @@ export async function writeArticleArchive(
       warnings.push(`图片未保存：${reason}`);
     }
   }
+  for (const image of documentImages(parsed.document.blocks))
+    if (!localized.has(image.reference)) warnings.push("图片没有对应的本地资源");
+  const html = renderBody(parsed.document.blocks, localized);
   const markdown = new TurndownService({ headingStyle: "atx", codeBlockStyle: "fenced" }).turndown(
     html,
   );
   const htmlPath = join(directory, "article.html");
-  await writeFile(join(directory, "source.html"), article.html, "utf8");
+  await writeFile(
+    join(directory, "content.json"),
+    JSON.stringify(parsed.document, null, 2),
+    "utf8",
+  );
+  await writeFile(
+    join(directory, "source.html"),
+    renderDocument(
+      parsed.document,
+      new Map(
+        documentImages(parsed.document.blocks).map((image) => [image.reference, image.reference]),
+      ),
+    ),
+    "utf8",
+  );
   await writeFile(
     join(directory, "article.md"),
     `# ${article.title}\n\n来源：${article.sourceUrl}\n\n${markdown}\n`,
     "utf8",
   );
-  const document = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>${escapeHtml(article.title)}</title><style>
-@page{size:210mm 297mm;margin:0}*{box-sizing:border-box}html,body{margin:0;background:#fff;color:#202124;font:16px/1.75 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}main{box-decoration-break:clone;padding:16mm;max-width:210mm;margin:auto;overflow-wrap:anywhere}h1{font-size:28px;line-height:1.4}h1,h2,h3,h4,h5,h6{break-after:avoid}figure{margin:16px 0;break-inside:avoid}img{max-width:100%;height:auto;display:block;margin:12px auto}p{orphans:3;widows:3}pre{white-space:pre-wrap}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:6px}.source{font-size:12px;color:#666;border-bottom:1px solid #ddd;padding-bottom:12px}a{color:#166b50}
-</style></head><body><main><h1>${escapeHtml(article.title)}</h1><p class="source"><a href="${escapeHtml(article.sourceUrl)}">${escapeHtml(article.sourceUrl)}</a></p><article>${html}</article></main></body></html>`;
+  const document = renderDocument(parsed.document, localized);
   await writeFile(htmlPath, document, "utf8");
   const manifest: ArticleArchive["manifest"] = {
-    schemaVersion: "1.0",
+    schemaVersion: "2.0",
     source,
     sourceUrl: article.sourceUrl,
     title: article.title,
     status: !article.complete || warnings.length ? "partial" : "succeeded",
     sections: article.sections,
+    blockCount: parsed.document.blocks.length,
     assets,
-    warnings,
+    warnings: [...new Set(warnings)],
   };
   await writeFile(join(directory, "artifact.json"), JSON.stringify(manifest, null, 2), "utf8");
   return { htmlPath, manifest };
-}
-
-export function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }
